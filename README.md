@@ -1,74 +1,88 @@
 **HexView Utility Tool**
 
 
-Nikhil Patel 
+Nikhil Patel
 
 **Purpose**
 
 
-This program is a simplified version of the xxd command-line utility, implemented in C. It operates in two modes. In the first mode, when no arguments are supplied, the program reads data from stdin and outputs a formatted hexadecimal and ASCII representation to stdout. In the second mode, when a file name is provided as an argument, the program reads the specified file and prints its content in the same formatted style to stdout. This functionality makes HexView a practical tool for visualizing binary data.
+While working on this project, I implemented a simplified version of the xxd command-line utility using C. My program operates in two modes. When no arguments are supplied, it reads data from stdin and outputs a formatted hexadecimal and ASCII representation to stdout. Alternatively, when a file name is provided as an argument, the program processes the specified file and produces the same formatted output. My goal was to create a practical tool for visualizing binary data, whether from files or live input streams.
 
 **Buffers and File Operations**
 
 
-A buffer is a temporary storage area used to hold data during transfer between locations, such as memory or file operations. For example, during video streaming, data is temporarily stored in a buffer before being displayed. In the context of this program, buffers allow data to be read and processed in manageable chunks without loading the entire file into memory.
-The read() function is central to this process. It is a system call used to read data from a file or input stream into a buffer. The function takes three parameters: a file descriptor (fd), a buffer (buf) to store the data, and the number of bytes (count) to read. The return value of read() is a ssize_t, indicating the number of bytes read or -1 in case of an error.
-File descriptors are identifiers for input/output streams. Standard input (stdin), standard output (stdout), and standard error (stderr) have descriptors 0, 1, and 2, respectively. These are treated like files and enable efficient data handling. For instance, the command read(0, buf, 16) attempts to read 16 bytes from stdin.
-The read() function will successfully read 16 bytes when the input source contains sufficient data, such as from a file or a well-buffered input stream. However, it might read fewer bytes when the input is incomplete or interrupted, such as during a live data stream.
-There are cases where a file cannot be read in its entirety:
-When the file size exceeds the available memory, leading to memory exhaustion.
-When reading from a live network stream or continuous input source, as the data may not have a definite end or might arrive in small, incremental chunks.
+To handle input efficiently, I used buffers as temporary storage areas for processing chunks of data. This design allowed me to avoid loading entire files into memory, which can be inefficient or impractical for large files.
+
+I relied on the read() system call to transfer data into the buffer. This function takes three parameters: a file descriptor, a buffer to store the data, and the number of bytes to read. The return value indicates the number of bytes successfully read or an error if the operation fails. Understanding file descriptors was crucial—they represent I/O streams like stdin, stdout, and stderr (with descriptors 0, 1, and 2, respectively). For example, the command read(0, buf, 16) reads 16 bytes from standard input.
+
+One challenge I addressed was the possibility of incomplete reads, especially from live input streams or large files. For instance, reading a continuous network stream or an extremely large file could result in partial or incremental data chunks. By designing the program to process manageable chunks of 16 bytes at a time, I ensured reliable performance while maintaining memory efficiency.
 
 **Testing**
 
 
-To validate the program, extensive testing is conducted using various input scenarios. Tests include supplying files of different sizes, including edge cases like empty files or large binary files. Additionally, inputs with delays or interruptions are tested to ensure the program handles incomplete data gracefully. The correctness of hexadecimal and ASCII representations is verified, ensuring alignment and formatting match the expected output.
+I conducted extensive testing to validate the program's functionality. I tested files of various sizes, from empty files to large binary files, to ensure that all scenarios were covered. Additionally, I tested edge cases like interrupted or delayed inputs to verify the program's ability to handle incomplete or irregular data gracefully.
+
+To confirm the correctness of the hexadecimal and ASCII representations, I compared the program’s output to expected results. Formatting and alignment were critical, and I ensured that even incomplete chunks of data were displayed properly with padding where necessary. These tests confirmed that the program reliably handled different inputs and produced accurate, formatted outputs.
 
 **How to Use the Program**
 
 
-The program is executed using the command ./xd [filename]. When no filename is provided, the program reads data from stdin and processes it. Users must specify three parameters for the read() function: the file descriptor (fd), the buffer (buf) where data is temporarily stored, and the number of bytes (count) to read. The program outputs a formatted hexadecimal and ASCII representation of the data. For example:
+To use the HexView utility, you run the program with the following command:
+
+bash
+Copy code
+./xd [filename]
+If no filename is provided, the program reads data from stdin. For example, you can pipe input directly to the program or enter it manually. When specifying a file, the program reads the file’s contents and outputs its hexadecimal and ASCII representation in a formatted manner.
+
+Here’s an example:
+
 bash
 Copy code
 ./xd example.bin
-This command processes the file example.bin and outputs its formatted content. If no file is provided, the program reads directly from the keyboard or piped input.
+This command processes the file example.bin and outputs its content in a formatted view. Each line shows the offset, hexadecimal bytes, and ASCII characters. If no file is specified, the program waits for input from the keyboard or another piped stream.
 
 **Program Design**
 
 
-The program is structured to be modular and maintainable. It begins by checking the arguments provided. If no arguments are supplied, the program reads from stdin. If a file name is provided, the program attempts to open the specified file. Errors in file handling are managed with clear error messages and appropriate exit codes.
-Data is read in chunks of 16 bytes using the read() function. Each chunk is processed and displayed in a formatted style. A loop iterates through the buffer, converting each byte into its hexadecimal representation and ASCII equivalent. Special handling is implemented for incomplete chunks to ensure proper alignment and formatting.
-Key variables include:
-file: Represents the file descriptor.
-buf: The buffer used to store chunks of data.
-offset: Tracks the current byte position for formatting purposes.
-file_size: Indicates the total number of bytes read.
-**Pseudocode:**
+I structured the program with modularity and maintainability in mind. It begins by checking the arguments provided. If no arguments are supplied, the program reads from stdin; otherwise, it attempts to open the specified file. Errors, such as invalid files or arguments, are handled with clear messages and appropriate exit codes.
+
+The program processes data in 16-byte chunks using the read() function. Each chunk is formatted into hexadecimal and ASCII, with special handling for incomplete chunks to ensure proper alignment. Key variables include:
+
+file: The file descriptor for input.
+buf: The buffer to store data chunks.
+offset: Tracks the current byte position for formatting.
+file_size: Tracks the total number of bytes read.
+The output format includes offsets (in hexadecimal), followed by the corresponding hexadecimal values and ASCII characters. Special characters are represented by dots (.) in the ASCII column.
+
+**Pseudocode**
+
 
 Initialization:
-Parse arguments to determine the input source.
-Open the specified file or use stdin.
+
+Parse the command-line arguments to determine the input source.
+Open the specified file or use stdin if no file is provided.
 Data Processing:
-Use a loop to read data in 16-byte chunks.
-Format and display each chunk as hexadecimal and ASCII.
+
+Loop to read data in 16-byte chunks using the read() function.
+Convert each chunk into its hexadecimal and ASCII representation.
 Output Formatting:
-Handle incomplete chunks with padding for proper alignment.
-Display offsets in hexadecimal for clarity.
+
+Format each chunk with the offset, hexadecimal values, and ASCII characters.
+Handle incomplete chunks with padding to maintain alignment.
 Error Handling:
-Return error codes for invalid files or arguments.
-Ensure proper cleanup and resource deallocation.
-Program Termination:
-Close file descriptors and free resources.
+
+Display clear messages for invalid files or arguments.
+Ensure resources like file descriptors are properly closed.
+Termination:
+
+Close file descriptors and free any allocated resources.
 Exit with a success or error code.
-
-**Function Descriptions**
-
-
+Function Descriptions
 main
-The main function initializes the program by determining whether to read from stdin or a file, based on the arguments provided. It handles input validation and calls the read() function to process data. The function manages loops for reading, formatting, and outputting data in hexadecimal and ASCII.
-read
-The read() function takes a file descriptor, a buffer, and a byte count as parameters. It reads data into the buffer and returns the number of bytes read. This function is critical for chunk-wise processing of input data.
-Nested Loops for Formatting
-Nested loops iterate through the buffer to process each byte. Inner loops handle the formatting of hexadecimal values, ASCII characters, and offsets. Conditional checks ensure alignment and padding for incomplete chunks.
+The main function initializes the program, parses arguments, and determines whether to read from stdin or a file. It validates inputs, calls the read() function, and manages loops for reading and formatting data. It ensures that errors are handled appropriately and outputs the final formatted result.
 
+read()
+This function is critical for chunk-wise data processing. It reads data from the specified file descriptor into a buffer and returns the number of bytes read. It is used in the main processing loop to retrieve and process data incrementally.
 
+Nested Loops for Formatting:
+The program uses nested loops to process each byte in the buffer. The inner loop converts bytes into their hexadecimal representation and ASCII equivalents. Conditional checks ensure that incomplete chunks are padded appropriately to maintain formatting.
